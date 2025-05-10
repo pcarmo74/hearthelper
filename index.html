@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Helper - Enhanced Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth; /* For smoother anchor link scrolling */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Styling for completed task descriptions */
+        .task-item .task-description.done {
+            text-decoration: line-through;
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+        /* Styling for completed task items */
+        .task-item.done {
+            background-color: #f0fdf4; /* Tailwind green-50 */
+            border-color: #bbf7d0; /* Tailwind green-200 */
+            opacity: 0.8; /* Slightly faded out when done */
+        }
+        /* Hover effect for non-completed task items */
+        .task-item:not(.done):hover {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* Tailwind shadow-md */
+            transform: translateY(-1px); /* Subtle lift effect */
+        }
+
+        /* Subtle left border colors for task types when not done, providing visual cues */
+        .task-item-medication:not(.done) { border-left: 4px solid #f43f5e; /* rose-500 */ }
+        .task-item-exercise:not(.done) { border-left: 4px solid #0ea5e9; /* sky-500 */ }
+        .task-item-eating:not(.done) { border-left: 4px solid #84cc16; /* lime-500 */ }
+        .task-item-general:not(.done) { border-left: 4px solid #64748b; /* slate-500 */ }
+
+        /* Modal styling for smooth appearance */
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Slightly darker backdrop for better focus */
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; /* Ensure modal is on top of other content */
+            opacity: 0; /* Start fully transparent for transition */
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-backdrop:not(.hidden) {
+            opacity: 1; /* Fade in when not hidden */
+        }
+        .modal-content {
+            background-color: white; padding: 2rem; /* Tailwind p-8 */
+            border-radius: 0.75rem; /* Tailwind rounded-xl */
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); /* Tailwind shadow-2xl for depth */
+            width: 100%; max-width: 28rem; /* Tailwind max-w-md */
+            position: relative;
+            transform: scale(0.95); /* Start slightly scaled down for transition */
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-backdrop:not(.hidden) .modal-content {
+            transform: scale(1); /* Scale to full size when modal is shown */
+        }
+        /* Debug info box styling (optional, for development) */
+        .debug-info {
+            background-color: #fffbeb; /* Light yellow background */
+            padding: 1rem; border: 1px solid #fef3c7; /* Yellow border */
+            border-radius: 0.5rem; margin-top: 1rem; font-size: 0.8rem;
+            max-height: 200px; overflow-y: auto; /* Scrollable if content is long */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-100 via-rose-50 to-amber-100 min-h-screen">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex-shrink-0">
+                    <a href="index.html" class="flex items-center space-x-2">
+                        <svg class="h-10 w-10 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        <span class="text-2xl font-bold text-slate-700">Heart<span class="text-rose-500">Helper</span></span>
+                    </a>
+                </div>
+                <nav class="hidden md:flex space-x-2 lg:space-x-4">
+                    <a href="index.html" class="text-slate-600 bg-rose-100 text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
+                    <a href="learn.html" class="text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Learn</a>
+                    <a href="medications.html" class="text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Medications</a>
+                    <a href="exercise.html" class="text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Exercise</a>
+                    <a href="recipes.html" class="text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Recipes</a>
+                    <a href="support.html" class="text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Support</a>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-slate-600 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-rose-500 p-2 rounded-md">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg rounded-b-lg">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="index.html" class="block text-rose-600 bg-rose-50 px-3 py-2 rounded-md text-base font-medium transition-colors">Dashboard</a>
+                <a href="learn.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Learn</a>
+                <a href="medications.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Medications</a>
+                <a href="exercise.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Exercise</a>
+                <a href="recipes.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Recipes</a>
+                <a href="support.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Support</a>
+                <a href="emergency.html" class="block text-slate-600 hover:bg-rose-100 hover:text-rose-600 px-3 py-2 rounded-md text-base font-medium transition-colors">Emergency</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800">Welcome to Your Recovery Dashboard</h1>
+            <p class="text-slate-600 mt-2 text-lg">Your daily guide to a healthier heart.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <section id="today-focus" class="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-xl transition-shadow duration-300">
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-6 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 mr-2 text-rose-500">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-3.75h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                        </svg>
+                        Today's Focus (<span id="current-date-display">Loading date...</span>)
+                    </h2>
+                    <div id="tasks-list" class="space-y-3 mb-6 min-h-[60px]">
+                        <p class="text-slate-500 text-center italic py-4">Loading tasks...</p>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button id="show-add-task-modal-button" class="bg-rose-500 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-rose-600 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 shadow-md hover:shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline-block mr-1 align-text-bottom"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            Add Item to Today's Focus
+                        </button>
+                    </div>
+                </section>
+
+                <section id="explore-sections" class="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-xl transition-shadow duration-300">
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-6 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 mr-2 text-amber-500"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
+                        Explore & Manage
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <a href="health_log.html" class="block p-4 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-all duration-200 hover:shadow-md">
+                            <div class="flex items-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-teal-500 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg><h3 class="font-semibold text-teal-700">Health Log</h3></div>
+                            <p class="text-sm text-teal-600">Record symptoms, notes, and feelings.</p>
+                        </a>
+                        <a href="mood_tracker.html" class="block p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all duration-200 hover:shadow-md">
+                            <div class="flex items-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-indigo-500 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" /></svg><h3 class="font-semibold text-indigo-700">Mood Tracker</h3></div>
+                            <p class="text-sm text-indigo-600">Log your daily mood and stress levels.</p>
+                        </a>
+                        <a href="emergency.html" class="block p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-all duration-200 hover:shadow-md">
+                            <div class="flex items-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-red-500 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.25-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" /></svg><h3 class="font-semibold text-red-700">Emergency Info</h3></div>
+                            <p class="text-sm text-red-600">Quick access to vital contacts & info.</p>
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <div class="space-y-6">
+                <section id="key-metrics" class="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-xl transition-shadow duration-300">
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-6 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 mr-2 text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                        My Recovery Snapshot
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <h3 class="font-medium text-green-700 mb-1">Medication Adherence</h3>
+                            <p class="text-2xl font-bold text-green-600" id="medication-adherence-value">--%</p>
+                            <p class="text-xs text-green-500 mb-2" id="medication-adherence-period">(This Week)</p>
+                            <div class="w-full bg-green-200 rounded-full h-2.5">
+                                <div id="medication-progress-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h3 class="font-medium text-blue-700 mb-1">Activity Streak</h3>
+                            <p class="text-2xl font-bold text-blue-600"><span id="activity-streak-count">0</span> Days</p>
+                            <p class="text-xs text-blue-500" id="activity-streak-message">Log an activity to start!</p>
+                        </div>
+                        <div class="p-4 bg-lime-50 rounded-lg border border-lime-200">
+                            <h3 class="font-medium text-lime-700 mb-1">Healthy Eating</h3>
+                            <p class="text-2xl font-bold text-lime-600"><span id="healthy-eating-count">0</span> Items</p>
+                            <p class="text-xs text-lime-500">Logged today</p>
+                        </div>
+                        <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <h3 class="font-medium text-yellow-700">Mood Logged Today</h3>
+                            <p class="text-2xl font-bold text-yellow-600">--</p>
+                             <a href="mood_tracker.html" class="text-sm text-yellow-700 hover:text-yellow-800 hover:underline">Log/Update Mood</a>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="quick-links" class="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-xl transition-shadow duration-300">
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-6 flex items-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 mr-2 text-purple-500"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                         Quick Links
+                    </h2>
+                    <nav class="space-y-2">
+                        <a href="learn.html" class="flex items-center p-3 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors group"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-purple-500 mr-3 group-hover:text-purple-600"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg><span class="text-slate-700 font-medium group-hover:text-slate-800">Educational Resources</span></a>
+                        <a href="recipes.html" class="flex items-center p-3 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors group"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-lime-500 mr-3 group-hover:text-lime-600"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 10.937c0 .399-.062.788-.182 1.158a10.483 10.483 0 0 1-2.094 4.042 9.854 9.854 0 0 1-3.638 2.919c-.76.418-1.563.735-2.403.953a10.51 10.51 0 0 1-5.832 0c-.84-.218-1.643-.535-2.403-.953a9.854 9.854 0 0 1-3.638-2.919A10.483 10.483 0 0 1 2.432 12.095c-.12-.37-.182-.759-.182-1.158A10.5 10.5 0 0 1 12.75 1.5a10.5 10.5 0 0 1 9 9.437ZM15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg><span class="text-slate-700 font-medium group-hover:text-slate-800">Healthy Heart Recipes</span></a>
+                        <a href="support.html" class="flex items-center p-3 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors group"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-cyan-500 mr-3 group-hover:text-cyan-600"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-3.741-5.664M12 12h9M12 12a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9" /></svg><span class="text-slate-700 font-medium group-hover:text-slate-800">Find Support</span></a>
+                    </nav>
+                </section>
+            </div>
+        </div>
+
+        <div class="mt-12 p-6 bg-white/70 backdrop-blur-md rounded-xl shadow-lg">
+            <h3 class="text-lg font-semibold text-slate-700 mb-3">Important Disclaimer:</h3>
+            <p class="text-sm text-slate-600 mb-2">This application is for informational and tracking purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.</p>
+            <p class="text-sm text-slate-600">Data entered is stored locally in your web browser. This data will be lost if you clear your browser's cache or use a different browser/device. No data is sent to any server.</p>
+        </div>
+        
+        <div class="mt-12 text-center text-sm text-slate-500">
+            <p>Interactive demonstration of the Heart Helper web application dashboard.</p>
+            <button id="clear-all-data-button" class="mt-2 text-xs text-red-500 hover:text-red-700 underline">Clear All Stored Task Data (for testing)</button>
+        </div>
+    </main>
+
+    <div id="add-task-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-slate-700 mb-6">Add New Item to Today's Focus</h3>
+            <form id="add-task-form">
+                <div class="mb-4">
+                    <label for="task-description" class="block text-sm font-medium text-slate-700 mb-1">Description:</label>
+                    <input type="text" id="task-description" name="task-description" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500 sm:text-sm" placeholder="e.g., Morning meds, 20 min walk" required>
+                </div>
+                <div class="mb-6">
+                    <label for="task-type" class="block text-sm font-medium text-slate-700 mb-1">Category:</label>
+                    <select id="task-type" name="task-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500 sm:text-sm">
+                        <option value="medication">Medication</option>
+                        <option value="exercise">Exercise / Activity</option>
+                        <option value="eating">Healthy Eating</option>
+                        <option value="general">General Task</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-add-task-button" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-rose-500 hover:bg-rose-600 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">Add Item</button>
+                </div>
+            </form>
+            <button id="close-modal-button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <span class="sr-only">Close modal</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+
+    <footer class="mt-12 py-8 bg-white/50 backdrop-blur-sm border-t border-slate-200">
+        <div class="container mx-auto px-4 text-center text-slate-600 text-sm">
+            <p>&copy; <span id="currentYear"></span> Heart Helper. All rights reserved (Conceptual App).</p>
+            <p class="mt-1">Designed to support your journey to a healthier heart.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Utility Functions ---
+        /**
+         * Formats a Date object into YYYY-MM-DD string.
+         * @param {Date} date - The date to format.
+         * @returns {string} The formatted date string.
+         */
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        /**
+         * Formats a Date object into a human-readable string (e.g., May 9, 2025).
+         * @param {Date} date - The date to format.
+         * @returns {string} The human-readable date string.
+         */
+        function getDisplayDate(date) {
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        
+        // --- Mobile Menu Toggle Functionality ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        }
+
+        // --- Set current year in footer ---
+        const currentYearElement = document.getElementById('currentYear');
+        if (currentYearElement) currentYearElement.textContent = new Date().getFullYear();
+
+        // --- Display Current Date in "Today's Focus" header ---
+        const currentDateDisplay = document.getElementById('current-date-display');
+        if (currentDateDisplay) currentDateDisplay.textContent = getDisplayDate(new Date());
+
+        // --- Main Application Logic for "Today's Focus" and "Recovery Snapshot" ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Element Selectors
+            const tasksList = document.getElementById('tasks-list');
+            const showAddTaskModalButton = document.getElementById('show-add-task-modal-button');
+            const addTaskModal = document.getElementById('add-task-modal');
+            const closeModalButton = document.getElementById('close-modal-button');
+            const cancelAddTaskButton = document.getElementById('cancel-add-task-button');
+            const addTaskForm = document.getElementById('add-task-form');
+            const taskDescriptionInput = document.getElementById('task-description');
+            const taskTypeInput = document.getElementById('task-type');
+            const clearAllDataButton = document.getElementById('clear-all-data-button');
+
+            // Recovery Snapshot UI Elements
+            const medicationProgressBar = document.getElementById('medication-progress-bar');
+            const medicationAdherenceValue = document.getElementById('medication-adherence-value');
+            const activityStreakCountSpan = document.getElementById('activity-streak-count');
+            const activityStreakMessage = document.getElementById('activity-streak-message');
+            const healthyEatingCountSpan = document.getElementById('healthy-eating-count');
+
+            const TASK_STORAGE_KEY_PREFIX = 'heartHelperTodayTasks_'; // Prefix for daily task storage keys
+
+            /**
+             * Generates the Local Storage key for a given date.
+             * @param {Date} date - The date for which to get the storage key.
+             * @returns {string} The Local Storage key.
+             */
+            function getStorageKeyForDate(date) {
+                return TASK_STORAGE_KEY_PREFIX + formatDate(date);
+            }
+
+            // --- Modal Handling Functions ---
+            function openModal() {
+                if (addTaskModal) {
+                    addTaskModal.classList.remove('hidden');
+                    // Force reflow for CSS transition to take effect
+                    void addTaskModal.offsetWidth; 
+                    addTaskModal.style.opacity = "1";
+                    const modalContent = addTaskModal.querySelector('.modal-content');
+                    if(modalContent) modalContent.style.transform = "scale(1)";
+                }
+            }
+            function closeModal() {
+                if (addTaskModal) {
+                    addTaskModal.style.opacity = "0";
+                    const modalContent = addTaskModal.querySelector('.modal-content');
+                    if(modalContent) modalContent.style.transform = "scale(0.95)";
+                    // Wait for transition to finish before hiding and resetting form
+                    setTimeout(() => {
+                        addTaskModal.classList.add('hidden');
+                        if (addTaskForm) addTaskForm.reset();
+                    }, 300); // Duration should match CSS transition time
+                }
+            }
+
+            // Event listeners for modal controls
+            if (showAddTaskModalButton) showAddTaskModalButton.addEventListener('click', openModal);
+            if (closeModalButton) closeModalButton.addEventListener('click', closeModal);
+            if (cancelAddTaskButton) cancelAddTaskButton.addEventListener('click', closeModal);
+            // Close modal if user clicks on the backdrop
+            if (addTaskModal) {
+                addTaskModal.addEventListener('click', (event) => {
+                    if (event.target === addTaskModal) closeModal();
+                });
+            }
+            
+            // --- Task Management for a Specific Day ---
+            /**
+             * Retrieves tasks for a given date from Local Storage.
+             * @param {Date} date - The date for which to retrieve tasks.
+             * @returns {Array} An array of task objects.
+             */
+            function getTasksForDate(date) {
+                const key = getStorageKeyForDate(date);
+                const storedTasks = localStorage.getItem(key);
+                try {
+                    return storedTasks ? JSON.parse(storedTasks) : [];
+                } catch (e) {
+                    console.error("Error parsing tasks from Local Storage for key:", key, e);
+                    return []; // Return empty array on error
+                }
+            }
+
+            /**
+             * Saves an array of tasks for a given date to Local Storage.
+             * @param {Date} date - The date for which to save tasks.
+             * @param {Array} tasksArray - The array of task objects to save.
+             */
+            function saveTasksForDate(date, tasksArray) {
+                const key = getStorageKeyForDate(date);
+                localStorage.setItem(key, JSON.stringify(tasksArray));
+            }
+            
+            let currentDayTasks = []; // Holds tasks for the currently displayed day (today)
+
+            /**
+             * Loads tasks for the current day from Local Storage and renders them.
+             * Also updates the recovery snapshot.
+             */
+            function loadCurrentDayTasks() {
+                currentDayTasks = getTasksForDate(new Date());
+                renderTasksUI(currentDayTasks);
+                updateRecoverySnapshot();
+            }
+
+            /**
+             * Saves the current day's tasks to Local Storage and updates the recovery snapshot.
+             */
+            function saveCurrentDayTasks() {
+                saveTasksForDate(new Date(), currentDayTasks);
+                updateRecoverySnapshot();
+            }
+
+            /**
+             * Renders the list of tasks to the UI.
+             * @param {Array} tasksToRender - An array of task objects to display.
+             */
+            function renderTasksUI(tasksToRender) {
+                if (!tasksList) return;
+                tasksList.innerHTML = ''; // Clear existing tasks from the list
+
+                if (tasksToRender.length === 0) {
+                    tasksList.innerHTML = `<p class="text-slate-500 text-center italic py-4">No items added for today yet. Click "Add Item" to get started!</p>`;
+                    return;
+                }
+
+                tasksToRender.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    const isDone = task.done;
+                    // Apply base classes and conditional 'done' class and type-specific border class
+                    taskElement.className = `task-item flex items-center justify-between p-3 pl-4 rounded-lg border transition-all duration-300 ease-in-out shadow-sm ${isDone ? 'done' : `task-item-${task.type} bg-white`}`;
+                    taskElement.dataset.taskId = task.id; // Store task ID for event handling
+
+                    let iconSvg = '';
+                    let typeColorClass = ''; // Default text color for description
+
+                    // Determine icon and color based on task type
+                    switch(task.type) {
+                        case 'medication':
+                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 flex-shrink-0 ${isDone ? 'text-green-500' : 'text-rose-500'}"><path stroke-linecap="round" stroke-linejoin="round" d="M21 10.5H9.75M21 10.5c0-2.485-2.015-4.5-4.5-4.5S12 8.015 12 10.5m9 0c0 2.485-2.015 4.5-4.5 4.5S12 12.985 12 10.5m9 0-9 0" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75H9.75m-3 0v10.5m0-10.5a2.25 2.25 0 0 0-2.25 2.25v6a2.25 2.25 0 0 0 2.25 2.25m0-10.5h3M3.75 17.25h16.5M3.75 17.25a2.25 2.25 0 0 1-2.25-2.25V9a2.25 2.25 0 0 1 2.25-2.25m16.5 0a2.25 2.25 0 0 0-2.25-2.25h-12a2.25 2.25 0 0 0-2.25 2.25m16.5 0H3.75" /></svg>`;
+                            typeColorClass = 'text-slate-700';
+                            break;
+                        case 'exercise':
+                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 flex-shrink-0 ${isDone ? 'text-green-500' : 'text-sky-500'}"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.5 13.5h3.375M16.5 13.5a3.375 3.375 0 0 1-3.375-3.375V6.75" /></svg>`;
+                            typeColorClass = 'text-slate-700';
+                            break;
+                        case 'eating':
+                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 flex-shrink-0 ${isDone ? 'text-green-500' : 'text-lime-500'}"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 10.937c0 .399-.062.788-.182 1.158a10.483 10.483 0 0 1-2.094 4.042 9.854 9.854 0 0 1-3.638 2.919c-.76.418-1.563.735-2.403.953a10.51 10.51 0 0 1-5.832 0c-.84-.218-1.643-.535-2.403-.953a9.854 9.854 0 0 1-3.638-2.919A10.483 10.483 0 0 1 2.432 12.095c-.12-.37-.182-.759-.182-1.158A10.5 10.5 0 0 1 12.75 1.5a10.5 10.5 0 0 1 9 9.437ZM15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>`;
+                            typeColorClass = 'text-slate-700';
+                            break;
+                        default: // General task
+                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 flex-shrink-0 ${isDone ? 'text-green-500' : 'text-slate-500'}"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>`;
+                            typeColorClass = 'text-slate-700';
+                    }
+                    
+                    const descriptionClass = isDone ? 'done' : typeColorClass;
+
+                    // Construct the inner HTML for the task item
+                    taskElement.innerHTML = `
+                        <div class="flex items-center flex-grow min-w-0"> <input type="checkbox" class="task-checkbox h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-3 flex-shrink-0 cursor-pointer" ${isDone ? 'checked' : ''}>
+                            ${iconSvg}
+                            <div class="flex-grow min-w-0"> <p class="font-medium task-description ${descriptionClass} truncate" title="${task.description}">${task.description}</p>
+                                <p class="text-xs text-gray-500 capitalize">${task.type.replace('_', ' ')}</p>
+                            </div>
+                        </div>
+                        <button class="delete-task-button text-gray-400 hover:text-red-600 transition-colors ml-2 p-1 flex-shrink-0 opacity-60 hover:opacity-100">
+                            <span class="sr-only">Delete task</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.56 0c1.153 0 2.24.03 3.22.077m3.22-.077L10.879 3.287a1.125 1.125 0 0 1 1.121-.853h.048a1.125 1.125 0 0 1 1.121.853l.292 2.142M7.881 5.79H16.12" /></svg>
+                        </button>
+                    `;
+                    
+                    // Add event listeners for checkbox and delete button
+                    taskElement.querySelector('.task-checkbox').addEventListener('change', () => toggleTaskDone(task.id));
+                    taskElement.querySelector('.delete-task-button').addEventListener('click', () => deleteTask(task.id));
+                    tasksList.appendChild(taskElement); // Add the new task element to the list
+                });
+            }
+
+            /**
+             * Adds a new task to the current day's list.
+             * @param {string} description - The description of the task.
+             * @param {string} type - The category/type of the task.
+             */
+            function addTask(description, type) {
+                if (!description.trim()) {
+                    alert("Please enter a description for the item."); // Basic validation
+                    taskDescriptionInput.focus(); // Focus on input for user convenience
+                    return; 
+                }
+                const newTask = {
+                    id: Date.now(), // Use timestamp for a simple unique ID
+                    description: description.trim(),
+                    type: type,
+                    done: false, // New tasks are not done by default
+                };
+                currentDayTasks.unshift(newTask); // Add new task to the beginning of the array
+                saveCurrentDayTasks(); // Save updated task list
+                renderTasksUI(currentDayTasks); // Re-render the UI
+                closeModal(); // Close the add task modal
+            }
+
+            /**
+             * Toggles the 'done' status of a task.
+             * @param {number} taskId - The ID of the task to toggle.
+             */
+            function toggleTaskDone(taskId) {
+                currentDayTasks = currentDayTasks.map(task => 
+                    task.id === taskId ? { ...task, done: !task.done } : task
+                );
+                saveCurrentDayTasks();
+                renderTasksUI(currentDayTasks); 
+            }
+
+            /**
+             * Deletes a task from the current day's list.
+             * @param {number} taskId - The ID of the task to delete.
+             */
+            function deleteTask(taskId) {
+                if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
+                currentDayTasks = currentDayTasks.filter(task => task.id !== taskId);
+                saveCurrentDayTasks();
+                renderTasksUI(currentDayTasks);
+            }
+
+            // Event listener for the add task form submission
+            if (addTaskForm) {
+                addTaskForm.addEventListener('submit', (event) => {
+                    event.preventDefault(); // Prevent default form submission (page reload)
+                    addTask(taskDescriptionInput.value, taskTypeInput.value);
+                });
+            }
+
+            // --- Recovery Snapshot Update Logic ---
+            /**
+             * Updates all metrics in the "My Recovery Snapshot" section.
+             */
+            function updateRecoverySnapshot() {
+                // 1. Medication Adherence (This Week)
+                let totalMedicationTasksWeek = 0;
+                let completedMedicationTasksWeek = 0;
+                for (let i = 0; i < 7; i++) { // Loop through the last 7 days
+                    const date = new Date();
+                    date.setDate(date.getDate() - i); // Get date for each of the last 7 days
+                    const dailyTasks = getTasksForDate(date);
+                    const medicationTasksToday = dailyTasks.filter(task => task.type === 'medication');
+                    totalMedicationTasksWeek += medicationTasksToday.length;
+                    completedMedicationTasksWeek += medicationTasksToday.filter(task => task.done).length;
+                }
+                const medicationAdherence = totalMedicationTasksWeek > 0 ? (completedMedicationTasksWeek / totalMedicationTasksWeek) * 100 : 0;
+                if (medicationAdherenceValue) medicationAdherenceValue.textContent = `${medicationAdherence.toFixed(0)}%`;
+                if (medicationProgressBar) medicationProgressBar.style.width = `${medicationAdherence.toFixed(0)}%`;
+
+                // 2. Activity Streak
+                let streak = 0;
+                for (let i = 0; i < 30; i++) { // Check up to 30 days back for a streak
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dailyTasks = getTasksForDate(date);
+                    // Check if at least one exercise task was completed on this day
+                    const completedExerciseToday = dailyTasks.some(task => task.type === 'exercise' && task.done);
+                    if (completedExerciseToday) {
+                        streak++;
+                    } else {
+                        break; // Streak is broken if a day is missed
+                    }
+                }
+                if (activityStreakCountSpan) activityStreakCountSpan.textContent = streak;
+                if (activityStreakMessage) { // Update motivational message based on streak length
+                    if (streak === 0) activityStreakMessage.textContent = "Log an activity to start a streak!";
+                    else if (streak === 1) activityStreakMessage.textContent = "Great start!";
+                    else if (streak < 5) activityStreakMessage.textContent = "Keep it up!";
+                    else activityStreakMessage.textContent = "Awesome consistency!";
+                }
+
+                // 3. Healthy Eating (Today)
+                const completedEatingTasksToday = currentDayTasks.filter(task => task.type === 'eating' && task.done).length;
+                if (healthyEatingCountSpan) healthyEatingCountSpan.textContent = completedEatingTasksToday;
+                
+                // Future: Could add more snapshot metrics here (e.g., average mood over week)
+            }
+            
+            // --- Clear All Data (for testing purposes) ---
+            if (clearAllDataButton) {
+                clearAllDataButton.addEventListener('click', () => {
+                    if (confirm("DANGER ZONE!\n\nAre you sure you want to delete ALL task data from your browser's Local Storage?\nThis action cannot be undone and is primarily for testing purposes.")) {
+                        Object.keys(localStorage).forEach(key => {
+                            if (key.startsWith(TASK_STORAGE_KEY_PREFIX)) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                        loadCurrentDayTasks(); // Reload and re-render to show empty state
+                        alert("All Heart Helper task data has been cleared from Local Storage.");
+                    }
+                });
+            }
+
+            // --- Initial Load on Page Ready ---
+            loadCurrentDayTasks(); // Load tasks for today and update snapshot when DOM is ready
+
+        }); // End of DOMContentLoaded event listener
+    </script>
+</body>
+</html>
